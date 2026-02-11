@@ -7,6 +7,9 @@
 ![Interface Overview]
 ![Voice Translation and Input]
 
+## Live Link
+https://healthcare-doctor-patient-translation-web-application-enbnaef2.streamlit.app/
+
 ## 📋 Project Overview
 **MediTranslate** is a high-performance, full-stack web application designed to facilitate seamless, real-time communication between doctors and patients speaking different languages. Built as a clinical communication bridge for the **Nao Technical Assessment**, this application leverages cutting-edge Generative AI to provide clinical-grade translation, voice processing, and medical summarization within a premium interface.
 
