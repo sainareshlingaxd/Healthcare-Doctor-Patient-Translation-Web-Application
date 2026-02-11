@@ -1,33 +1,39 @@
 
 import sqlite3
 import datetime
+import os
 from pathlib import Path
 
-DB_FILE = "chat.db"
+# Use absolute path to ensure consistency on Cloud deployments
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(os.path.dirname(BASE_DIR), "chat.db")
 
 def conn_db():
     """Create a thread-safe connection with a longer timeout."""
     return sqlite3.connect(DB_FILE, check_same_thread=False, timeout=30)
 
 def init_db():
-    """Initialize the database with necessary tables."""
+    """Initialize the database with necessary tables and WAL mode."""
     conn = conn_db()
-    c = conn.cursor()
-    
-    # Create tables
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            role TEXT,
-            original_text TEXT,
-            translated_text TEXT,
-            audio_path TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
+    try:
+        c = conn.cursor()
+        # Enable WAL mode for better concurrency in multi-session environments
+        c.execute('PRAGMA journal_mode=WAL;')
+        
+        # Create tables
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT,
+                original_text TEXT,
+                translated_text TEXT,
+                audio_path TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+    finally:
+        conn.close()
 
 def save_message(role, original_text, translated_text, audio_path=None):
     """Save a new message to the database."""
@@ -39,6 +45,9 @@ def save_message(role, original_text, translated_text, audio_path=None):
             VALUES (?, ?, ?, ?)
         ''', (role, original_text, translated_text, audio_path))
         conn.commit()
+        # Small delay to ensure DB flush on slower cloud filesystems
+        import time
+        time.sleep(0.1)
     finally:
         conn.close()
 
